@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordnus — ভোকাব লার্নিং</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #f0f0f8;
+  --text2: #8888aa;
+  --text3: #55556a;
+  --accent: #7c6af7;
+  --accent2: #a78bfa;
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.1);
+  --green-border: rgba(74,222,128,0.3);
+  --orange: #fb923c;
+  --orange-bg: rgba(251,146,60,0.1);
+  --orange-border: rgba(251,146,60,0.3);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.1);
+  --red-border: rgba(248,113,113,0.3);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* bg grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 1rem 4rem; }
+
+/* ── HEADER ── */
+.header {
+  padding: 2rem 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #a78bfa, #7c6af7, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-meta { font-size: 12px; color: var(--text3); }
+
+/* ── PROGRESS BAR ── */
+.global-progress {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), #60a5fa);
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+.progress-text { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+/* ── LIST SELECTOR ── */
+.list-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.list-chip {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 0.5px solid var(--border2);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.list-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── SETS GRID ── */
+.section-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.sets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.set-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.set-card:hover:not(.locked) { border-color: var(--border2); transform: translateY(-2px); }
+.set-card.locked { opacity: 0.35; cursor: not-allowed; }
+.set-card.done { border-color: var(--green-border); }
+.set-card.done::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--green);
+}
+.set-card.active-set { border-color: var(--accent); }
+.set-card.active-set::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.set-icon { font-size: 20px; margin-bottom: 6px; }
+.set-num { font-size: 13px; font-weight: 500; color: var(--text); }
+.set-label { font-size: 10px; color: var(--text3); margin-top: 3px; }
+.start-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1.5rem;
+}
+.start-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+.start-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* ── SCREEN TRANSITIONS ── */
+.screen { display: none; animation: fadeUp 0.3s ease; }
+.screen.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── WORD SCREEN ── */
+.word-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.back-btn {
+  font-size: 13px;
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: 'Sora', sans-serif;
+}
+.back-btn:hover { color: var(--text2); }
+.word-dots { display: flex; gap: 6px; align-items: center; }
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  transition: all 0.3s;
+}
+.dot.green { background: var(--green); border-color: var(--green); }
+.dot.orange { background: var(--orange); border-color: var(--orange); }
+.dot.red { background: var(--red); border-color: var(--red); }
+.dot.current { transform: scale(1.4); border-color: var(--accent2); }
+
+.word-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.word-main { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--text); margin-bottom: 4px; }
+.word-pos {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(124,106,247,0.15);
+  border: 0.5px solid rgba(124,106,247,0.3);
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+.word-def { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 12px; }
+.syn-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.syn-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  color: var(--text2);
+}
+.ant-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--red-bg);
+  border: 0.5px solid var(--red-border);
+  color: var(--red);
+}
+.bangla-box {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.8;
+  margin-bottom: 14px;
+  border-left: 2px solid var(--accent);
+}
+.examples-label { font-size: 11px; letter-spacing: 1px; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
+.example-item {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.example-item:last-child { border-bottom: none; }
+.example-item em { color: var(--accent2); font-style: normal; font-weight: 500; }
+.ai-loading-text { font-size: 13px; color: var(--text3); text-align: center; padding: 1rem 0; }
+
+.conf-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+.conf-btn {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 0.5px solid;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.4;
+}
+.conf-btn:hover { transform: translateY(-2px); }
+.btn-green { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.btn-orange { background: var(--orange-bg); border-color: var(--orange-border); color: var(--orange); }
+.btn-red { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+
+/* ── QUIZ SCREEN ── */
+.quiz-header { margin-bottom: 1.25rem; }
+.quiz-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+.quiz-sub { font-size: 13px; color: var(--text2); }
+.score-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.score-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 0.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text3);
+  transition: all 0.3s;
+}
+.score-chip.one { background: var(--orange-bg); border-color: var(--orange-border); color: var(--orange); }
+.score-chip.done { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+
+.quiz-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.quiz-q { font-size: 16px; font-weight: 500; line-height: 1.6; margin-bottom: 1.25rem; color: var(--text); }
+.quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt {
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border2);
+  background: var(--surface2);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(124,106,247,0.1); }
+.quiz-opt.correct { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.quiz-opt.wrong { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+.quiz-feedback {
+  font-size: 13px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  display: none;
+}
+.feedback-correct { background: var(--green-bg); color: var(--green); }
+.feedback-wrong { background: var(--red-bg); color: var(--red); }
+
+.quiz-next-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent2);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 1rem;
+  display: none;
+  transition: all 0.2s;
+}
+.quiz-next-btn:hover { background: rgba(124,106,247,0.1); }
+
+/* ── DONE SCREEN ── */
+.done-screen {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.done-icon { font-size: 52px; margin-bottom: 1rem; }
+.done-title { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 0.5rem; }
+.done-sub { font-size: 14px; color: var(--text2); margin-bottom: 2rem; line-height: 1.7; }
+.done-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 2rem;
+}
+.stat-box {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.stat-num { font-size: 24px; font-weight: 600; }
+.stat-label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.home-btn {
+  padding: 0.9rem 2.5rem;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent2);
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.home-btn:hover { background: rgba(124,106,247,0.15); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">Wordnus</div>
+    <div class="header-meta" id="header-meta">GRE 333 · ০/৬৭ সেট</div>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="global-progress">
+      <div class="progress-track"><div class="progress-fill" id="global-bar" style="width:0%"></div></div>
+      <div class="progress-text" id="global-pct">০% সম্পন্ন</div>
+    </div>
+
+    <div class="list-selector">
+      <div class="list-chip active">GRE 333</div>
+      <div class="list-chip" style="opacity:0.4; cursor:not-allowed;">Barron's 800</div>
+      <div class="list-chip" style="opacity:0.4; cursor:not-allowed;">Magoosh 1000</div>
+      <div class="list-chip" style="opacity:0.4; cursor:not-allowed;">Word Smart</div>
+    </div>
+
+    <div class="section-label">সেট নির্বাচন করো</div>
+    <div class="sets-grid" id="sets-grid"></div>
+    <button class="start-btn" id="start-btn" onclick="startCurrentSet()">সেট শুরু করো →</button>
+  </div>
+
+  <!-- WORD SCREEN -->
+  <div id="screen-word" class="screen">
+    <div class="word-nav">
+      <button class="back-btn" onclick="goHome()">← ফিরে যাও</button>
+      <div class="word-dots" id="word-dots"></div>
+      <span style="font-size:12px; color:var(--text3);" id="word-counter"></span>
+    </div>
+    <div class="word-card" id="word-card">
+      <div class="ai-loading-text">লোড হচ্ছে...</div>
+    </div>
+    <div class="conf-btns">
+      <button class="conf-btn btn-green" onclick="markWord('green')">আত্মবিশ্বাসী<br><span style="font-size:10px; opacity:0.7;">ভালো জানি</span></button>
+      <button class="conf-btn btn-orange" onclick="markWord('orange')">মোটামুটি<br><span style="font-size:10px; opacity:0.7;">আরেকটু লাগবে</span></button>
+      <button class="conf-btn btn-red" onclick="markWord('red')">চিন্তিত<br><span style="font-size:10px; opacity:0.7;">বারবার দেখবো</span></button>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <div class="back-btn" onclick="goHome()" style="cursor:pointer; font-size:13px; color:var(--text3); margin-bottom:0.75rem;">← ফিরে যাও</div>
+      <div class="quiz-title">কুইজ — সেট <span id="quiz-set-label"></span></div>
+      <div class="quiz-sub">প্রতিটি শব্দে ২টি সঠিক উত্তর দিতে হবে</div>
+    </div>
+    <div class="score-chips" id="score-chips"></div>
+    <div class="quiz-card">
+      <div class="ai-loading-text" id="quiz-loading">প্রশ্ন তৈরি হচ্ছে...</div>
+      <div id="quiz-content" style="display:none;">
+        <div class="quiz-q" id="quiz-q"></div>
+        <div class="quiz-opts" id="quiz-opts"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+        <button class="quiz-next-btn" id="quiz-next-btn" onclick="nextQuizQ()">পরের প্রশ্ন →</button>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--text3); text-align:center;" id="quiz-progress-hint"></div>
+  </div>
+
+  <!-- DONE SCREEN -->
+  <div id="screen-done" class="screen">
+    <div class="done-screen">
+      <div class="done-icon">🎯</div>
+      <div class="done-title">সেট সম্পন্ন!</div>
+      <div class="done-sub">তুমি এই সেটের সব শব্দ শিখেছো<br>এবং কুইজ পাস করেছো।</div>
+      <div class="done-stats">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-green" style="color:var(--green);">0</div>
+          <div class="stat-label">আত্মবিশ্বাসী</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-orange" style="color:var(--orange);">0</div>
+          <div class="stat-label">মোটামুটি</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-red" style="color:var(--red);">0</div>
+          <div class="stat-label">চিন্তিত</div>
+        </div>
+      </div>
+      <button class="home-btn" onclick="goHome()">হোমে ফিরে যাও</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── WORD DATA ──
+const WORD_DATA = {
+  "GRE 333": [
+    [
+      { word:"Aberrant", pos:"adjective", def:"Departing from an accepted standard; deviating from the norm.", bangla:"স্বাভাবিক থেকে বিচ্যুত। যেমন কেউ যদি সমাজের নিয়ম না মেনে অদ্ভুত আচরণ করে, তাকে aberrant behavior বলা হয়।", synonyms:["deviant","anomalous","atypical"], antonyms:["normal","typical"], examples:["The scientist noticed aberrant results that defied all previous models.", "Her aberrant behavior alarmed her colleagues at the firm."] },
+      { word:"Abjure", pos:"verb", def:"To solemnly renounce or reject a belief, claim, or course of action.", bangla:"দৃঢ়ভাবে কিছু ত্যাগ করা। একজন রাজনীতিবিদ যদি তার পুরনো মতাদর্শ সম্পূর্ণভাবে ছেড়ে দেন, তখন বলা হয় তিনি abjure করেছেন।", synonyms:["renounce","recant","forswear"], antonyms:["embrace","uphold"], examples:["He abjured his former political beliefs after years of reflection.", "The witness abjured all previous testimony under oath."] },
+      { word:"Abstruse", pos:"adjective", def:"Difficult to understand; obscure and complex in nature.", bangla:"কঠিন বা দুর্বোধ্য। বিশ্ববিদ্যালয়ের দর্শন পরীক্ষার একটি প্রশ্ন যদি এতটাই জটিল হয় যে বেশিরভাগই বুঝতে পারে না, তাহলে সেটা abstruse।", synonyms:["obscure","esoteric","recondite"], antonyms:["clear","simple","lucid"], examples:["The professor's abstruse lecture left most students utterly confused.", "Quantum mechanics can seem abstruse to those without a physics background."] },
+      { word:"Acerbic", pos:"adjective", def:"Sharp and forthright; harsh or severe in manner or expression.", bangla:"তীক্ষ্ণ বা কটু। কোনো সমালোচক যদি কাউকে এমনভাবে সমালোচনা করেন যা শুনতে খুব কঠোর লাগে, তাহলে তার ভাষাকে acerbic বলা হয়।", synonyms:["caustic","sardonic","mordant"], antonyms:["mild","gentle","pleasant"], examples:["Her acerbic wit could cut through any pretension in the room.", "The critic's acerbic review devastated the young playwright."] },
+      { word:"Acrimony", pos:"noun", def:"Bitterness or ill feeling, especially in speech or manner.", bangla:"তিক্ততা বা বিদ্বেষ। দুই পুরনো বন্ধুর মধ্যে যখন সম্পর্ক ভেঙে যায় এবং তারা তিক্তভাবে কথা বলে, সেই অবস্থাকে acrimony বলা যায়।", synonyms:["bitterness","rancor","animosity"], antonyms:["goodwill","amity","harmony"], examples:["The divorce proceedings were marked by intense acrimony.", "Years of acrimony between the two families finally came to a head."] }
+    ],
+    [
+      { word:"Adulation", pos:"noun", def:"Excessive admiration or praise; flattery.", bangla:"অতিরিক্ত প্রশংসা বা তোষামোদ। কোনো তারকার ভক্তরা যখন তাকে দেবতার মতো পূজা করে, সেটাই adulation।", synonyms:["flattery","fawning","sycophancy"], antonyms:["criticism","censure"], examples:["The pop star basked in the adulation of thousands of screaming fans.", "He grew uncomfortable with the adulation showered upon him."] },
+      { word:"Aesthetic", pos:"adjective", def:"Concerned with beauty or the appreciation of beauty.", bangla:"সৌন্দর্য সম্পর্কিত। কোনো শিল্পী যখন তার কাজে সুন্দরের সন্ধান করেন, তখন তার দৃষ্টিভঙ্গিকে aesthetic বলা হয়।", synonyms:["artistic","tasteful","elegant"], antonyms:["unattractive","crude"], examples:["The aesthetic appeal of the building drew architects from around the world.", "She had a refined aesthetic sensibility that influenced her every choice."] },
+      { word:"Affable", pos:"adjective", def:"Friendly, good-natured, and easy to talk to.", bangla:"মিশুক ও বন্ধুত্বপূর্ণ। এমন কেউ যার সাথে কথা বলতে সবসময় ভালো লাগে, যিনি সবসময় হাসিমুখে কথা বলেন, তিনি affable।", synonyms:["friendly","amiable","genial"], antonyms:["unfriendly","aloof","cold"], examples:["The affable professor was always surrounded by students eager to chat.", "Despite his fame, he remained affable and approachable."] },
+      { word:"Aggrandize", pos:"verb", def:"To increase the power, status, or wealth of someone, often in an exaggerated way.", bangla:"নিজেকে বা অন্যকে অতিরিক্তভাবে বড় করা। কেউ যদি নিজের সাফল্য নিয়ে বাড়িয়ে বলেন, তিনি self-aggrandize করছেন।", synonyms:["exalt","magnify","inflate"], antonyms:["diminish","belittle"], examples:["He used every opportunity to aggrandize his role in the company's success.", "The dictator sought to aggrandize himself through massive public monuments."] },
+      { word:"Alacrity", pos:"noun", def:"Brisk and cheerful readiness; eager willingness.", bangla:"তৎপরতা বা উৎসাহী প্রস্তুতি। কেউ যদি কোনো কাজে খুব আগ্রহ ও দ্রুততার সাথে ঝাঁপিয়ে পড়েন, তাহলে তার মধ্যে alacrity আছে।", synonyms:["eagerness","enthusiasm","promptness"], antonyms:["reluctance","sluggishness"], examples:["She accepted the challenge with surprising alacrity.", "The soldiers responded with alacrity when the orders were given."] }
+    ],
+    [
+      { word:"Alleviate", pos:"verb", def:"To make suffering, deficiency, or a problem less severe.", bangla:"কষ্ট বা সমস্যা কমানো। যেমন ব্যথানাশক ওষুধ ব্যথা alleviate করে — পুরোপুরি সারায় না, তবে কমিয়ে দেয়।", synonyms:["ease","mitigate","relieve"], antonyms:["aggravate","worsen"], examples:["The new policy was designed to alleviate poverty in rural areas.", "She took medicine to alleviate the throbbing headache."] },
+      { word:"Amalgam", pos:"noun", def:"A mixture or blend of different things.", bangla:"বিভিন্ন জিনিসের মিশ্রণ। বাংলাদেশের সংস্কৃতি হলো অনেক সংস্কৃতির amalgam — হিন্দু, মুসলিম, বৌদ্ধ সব মিলিয়ে।", synonyms:["mixture","blend","combination"], antonyms:["separation","division"], examples:["His personality was an amalgam of his parents' contrasting characters.", "The city's architecture is an amalgam of colonial and modern styles."] },
+      { word:"Ambiguous", pos:"adjective", def:"Open to more than one interpretation; not clear or definite.", bangla:"দ্ব্যর্থবোধক। এমন কথা যার একাধিক অর্থ হতে পারে। রাজনীতিবিদরা প্রায়ই ambiguous কথা বলেন যাতে সবাই নিজের মতো বোঝে।", synonyms:["vague","unclear","equivocal"], antonyms:["clear","definite","unambiguous"], examples:["The contract's ambiguous wording led to a lengthy legal dispute.", "His smile was ambiguous — she couldn't tell if he was happy or mocking her."] },
+      { word:"Ameliorate", pos:"verb", def:"To make something bad or unsatisfactory better.", bangla:"খারাপ পরিস্থিতি উন্নত করা। সরকার যদি গরিবদের জন্য নতুন প্রকল্প নেয় যা তাদের জীবন উন্নত করে, তাহলে সেটা তাদের অবস্থা ameliorate করছে।", synonyms:["improve","better","enhance"], antonyms:["worsen","deteriorate"], examples:["The charity worked to ameliorate the living conditions of refugees.", "New laws were passed to ameliorate the suffering caused by the famine."] },
+      { word:"Amenable", pos:"adjective", def:"Open and responsive to suggestion; easily persuaded.", bangla:"সহজে রাজি হয় এমন। কেউ যদি অন্যের পরামর্শ মেনে নিতে রাজি থাকেন, তিনি amenable।", synonyms:["responsive","agreeable","compliant"], antonyms:["stubborn","resistant","obstinate"], examples:["He was surprisingly amenable to changing his long-held views.", "The manager was amenable to flexible working arrangements."] }
+    ],
+    [
+      { word:"Anachronism", pos:"noun", def:"A thing belonging to a period other than the one portrayed; something out of its proper time.", bangla:"কালানুপযোগী বিষয়। মধ্যযুগীয় সিনেমায় যদি কেউ মোবাইল ফোন ব্যবহার করে, সেটা হবে anachronism।", synonyms:["archaism","relic","incongruity"], antonyms:["modernity"], examples:["A knight with a smartphone would be a glaring anachronism.", "The film's use of modern slang was an obvious anachronism."] },
+      { word:"Anodyne", pos:"adjective", def:"Not likely to offend or arouse strong feelings; painless.", bangla:"যা ব্যথা কমায় বা বিরক্তি সৃষ্টি করে না। একটি anodyne বক্তৃতা এতটাই নিরীহ যে কেউ সেটা নিয়ে মাথাও ঘামাবে না।", synonyms:["bland","inoffensive","innocuous"], antonyms:["provocative","controversial"], examples:["His speech was so anodyne that no one remembered a word of it.", "The committee issued an anodyne statement that satisfied no one."] },
+      { word:"Antagonize", pos:"verb", def:"To cause someone to become hostile; to provoke.", bangla:"কাউকে শত্রু বানানো বা বিরক্ত করা। কেউ যদি ইচ্ছে করে অন্যকে রাগিয়ে তোলেন, তিনি antagonize করছেন।", synonyms:["provoke","irritate","alienate"], antonyms:["pacify","appease","conciliate"], examples:["His dismissive comments antagonized even his closest allies.", "She had no intention of antagonizing the committee before the vote."] },
+      { word:"Antipathy", pos:"noun", def:"A deep-seated feeling of aversion or dislike.", bangla:"গভীর বিদ্বেষ বা অপছন্দ। দুই শত্রু দেশের মানুষের মধ্যে যে স্বাভাবিক ঘৃণার অনুভূতি, সেটাই antipathy।", synonyms:["aversion","hostility","animosity"], antonyms:["affinity","attraction","sympathy"], examples:["There was a long-standing antipathy between the two rival families.", "She felt an inexplicable antipathy toward her new neighbor."] },
+      { word:"Apathy", pos:"noun", def:"Lack of interest, enthusiasm, or concern.", bangla:"উদাসীনতা বা আগ্রহের অভাব। কেউ যদি দেশের রাজনীতি, সমাজ কোনো কিছু নিয়েই মাথা না ঘামান, তার মধ্যে apathy আছে।", synonyms:["indifference","lethargy","detachment"], antonyms:["enthusiasm","passion","concern"], examples:["Voter apathy led to the lowest turnout in decades.", "Her apathy toward her studies worried her parents deeply."] }
+    ],
+    [
+      { word:"Appease", pos:"verb", def:"To pacify or placate someone by giving them what they want.", bangla:"শান্ত করা বা তুষ্ট করা। কেউ যদি রাগী মানুষকে তার চাহিদা পূরণ করে শান্ত করেন, তিনি appease করছেন।", synonyms:["pacify","placate","mollify"], antonyms:["antagonize","aggravate","provoke"], examples:["The government tried to appease protesters by announcing new reforms.", "She bought her child ice cream to appease his tantrum."] },
+      { word:"Arcane", pos:"adjective", def:"Understood by few; mysterious or secret.", bangla:"রহস্যময় বা অল্প মানুষের জানা। এমন জ্ঞান বা বিদ্যা যা সবাই জানে না, শুধু বিশেষজ্ঞরা জানেন, সেটা arcane।", synonyms:["esoteric","cryptic","obscure"], antonyms:["common","well-known","familiar"], examples:["The professor specialized in arcane aspects of medieval law.", "Only a few initiates understood the arcane rituals of the order."] },
+      { word:"Arduous", pos:"adjective", def:"Involving or requiring strenuous effort; difficult and tiring.", bangla:"কঠিন ও পরিশ্রমসাধ্য। পাহাড় চূড়ায় উঠা একটা arduous কাজ — এতে প্রচুর পরিশ্রম ও কষ্ট লাগে।", synonyms:["strenuous","grueling","laborious"], antonyms:["easy","effortless","simple"], examples:["The trek through the mountains proved far more arduous than expected.", "Years of arduous training finally paid off when she won the championship."] },
+      { word:"Arrogate", pos:"verb", def:"To claim or seize something without justification.", bangla:"অন্যায়ভাবে কিছু দাবি করা বা নিয়ে নেওয়া। কেউ যদি তার প্রাপ্য নয় এমন ক্ষমতা বা অধিকার জোর করে নেয়, সে arrogate করছে।", synonyms:["seize","usurp","commandeer"], antonyms:["relinquish","yield","surrender"], examples:["The general attempted to arrogate civilian authority during the crisis.", "She arrogated the credit for work done by her entire team."] },
+      { word:"Artless", pos:"adjective", def:"Without guile or deception; natural and innocent.", bangla:"সরল ও কপটতাহীন। এমন কেউ যিনি মনের কথা সরাসরি বলেন, কোনো কূটকৌশল জানেন না, তিনি artless।", synonyms:["naive","guileless","candid"], antonyms:["cunning","crafty","deceitful"], examples:["Her artless charm won over even the most cynical guests.", "The child's artless questions revealed the flaws in the adult's reasoning."] }
+    ],
+    [
+      { word:"Ascetic", pos:"adjective", def:"Characterized by severe self-discipline and abstention from indulgence.", bangla:"তপস্বী বা সংযমী। সন্ন্যাসীরা যেভাবে সব সুখ-আরাম ত্যাগ করে সাধনা করেন, সেই জীবনধারাকে ascetic বলে।", synonyms:["austere","abstemious","spartan"], antonyms:["hedonistic","indulgent","sybaritic"], examples:["The monk led an ascetic life, owning nothing but a robe and begging bowl.", "Her ascetic approach to food was admired but rarely imitated."] },
+      { word:"Assuage", pos:"verb", def:"To make an unpleasant feeling less intense; to satisfy an appetite.", bangla:"কষ্ট বা ক্ষুধা প্রশমিত করা। বন্ধুর সান্ত্বনা যখন কারো দুঃখ কমায়, তখন সে তার কষ্ট assuage করছে।", synonyms:["relieve","mitigate","alleviate"], antonyms:["aggravate","intensify"], examples:["Nothing could assuage her grief after the loss of her child.", "The small snack was enough to assuage his hunger until dinner."] },
+      { word:"Astute", pos:"adjective", def:"Having an ability to accurately assess situations; shrewd.", bangla:"চালাক ও তীক্ষ্ণবুদ্ধি। একজন astute ব্যবসায়ী সুযোগ দেখলেই বুঝতে পারেন এবং সিদ্ধান্ত নিতে ভুল করেন না।", synonyms:["shrewd","perceptive","clever"], antonyms:["naive","obtuse","foolish"], examples:["Her astute observation identified the flaw in the business plan.", "An astute investor, he had foreseen the market crash months in advance."] },
+      { word:"Audacious", pos:"adjective", def:"Showing a willingness to take bold risks; impudently bold.", bangla:"সাহসী ও দুঃসাহসিক। এমন কেউ যিনি ভয় না পেয়ে বড় ঝুঁকি নেন, তিনি audacious।", synonyms:["bold","daring","brazen"], antonyms:["timid","cowardly","cautious"], examples:["Her audacious plan to climb Everest alone shocked her family.", "The startup made the audacious claim that it would replace all banks."] },
+      { word:"Austere", pos:"adjective", def:"Severe or strict in manner; without luxury or ornamentation.", bangla:"কঠোর ও সাদাসিধে। যে ঘরে কোনো সাজসজ্জা নেই, শুধু দরকারি জিনিস আছে, সেই পরিবেশ austere।", synonyms:["severe","stern","spartan"], antonyms:["luxurious","ornate","indulgent"], examples:["The monastery's austere interior reflected the monks' commitment to simplicity.", "Her austere management style left little room for creativity."] }
+    ],
+    [
+      { word:"Avarice", pos:"noun", def:"Extreme greed for wealth or material gain.", bangla:"অতিরিক্ত লোভ। যে মানুষ কখনো যথেষ্ট পরিমাণে সন্তুষ্ট হয় না এবং আরো বেশি টাকার জন্য যেকোনো কাজ করতে রাজি, তার মধ্যে avarice আছে।", synonyms:["greed","cupidity","covetousness"], antonyms:["generosity","altruism","benevolence"], examples:["His avarice drove him to betray his closest business partners.", "The king's avarice left his kingdom impoverished and resentful."] },
+      { word:"Banal", pos:"adjective", def:"So lacking in originality as to be obvious and boring.", bangla:"একঘেয়ে ও সাধারণ। এমন কথা বা কাজ যা এতটাই পরিচিত যে আর কোনো মৌলিকতা নেই, সেটা banal।", synonyms:["trite","hackneyed","mundane"], antonyms:["original","fresh","novel"], examples:["The speech was full of banal platitudes that moved no one.", "Critics dismissed the film as a banal rehash of familiar ideas."] },
+      { word:"Benign", pos:"adjective", def:"Gentle and kindly; not harmful in effect.", bangla:"সৌম্য ও ক্ষতিকর নয়। একটি benign টিউমার ক্যান্সার নয় — এটা ক্ষতি করে না। মানুষের ক্ষেত্রে, একটি benign হাসি মানে বন্ধুত্বপূর্ণ হাসি।", synonyms:["harmless","gentle","kindly"], antonyms:["malignant","harmful","hostile"], examples:["The doctor confirmed the tumor was benign and required no treatment.", "His benign expression put the nervous candidates at ease."] },
+      { word:"Blandish", pos:"verb", def:"To coax with flattery; to cajole.", bangla:"তোষামোদ করে কাউকে রাজি করানো। কেউ যদি মিষ্টি কথা বলে অন্যকে কিছু করাতে চায়, সে blandish করছে।", synonyms:["flatter","cajole","wheedle"], antonyms:["threaten","coerce"], examples:["He tried to blandish the committee with praise and small gifts.", "She blandished her way into getting a better table at the restaurant."] },
+      { word:"Boorish", pos:"adjective", def:"Rough and bad-mannered; coarse.", bangla:"অসভ্য ও রুক্ষ ব্যবহার। যিনি অন্যদের সামনে ঢেঁকুর তোলেন, অশ্লীল কথা বলেন বা সামাজিক শিষ্টাচার মানেন না, তিনি boorish।", synonyms:["crude","loutish","uncouth"], antonyms:["refined","polished","courteous"], examples:["His boorish table manners embarrassed everyone at the formal dinner.", "The boorish comments from the audience silenced the timid speaker."] }
+    ]
+  ]
+};
+
+// ── STATE ──
+const TOTAL_SETS = 67;
+let state = {
+  currentList: "GRE 333",
+  selectedSet: 0,
+  sets: loadSets(),
+  wordIdx: 0,
+  quizData: [],
+  quizIdx: 0,
+  correctCounts: {},
+  currentSetMarks: []
+};
+
+function loadSets() {
+  const saved = localStorage.getItem('wordnus_sets');
+  if (saved) return JSON.parse(saved);
+  const s = Array.from({length: TOTAL_SETS}, (_, i) => ({
+    id: i + 1,
+    status: i === 0 ? 'unlocked' : 'locked',
+    marks: []
+  }));
+  return s;
+}
+
+function saveSets() {
+  localStorage.setItem('wordnus_sets', JSON.stringify(state.sets));
+}
+
+function getWords() {
+  const lists = WORD_DATA[state.currentList];
+  const idx = state.selectedSet;
+  return lists[idx] || lists[0];
+}
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { showScreen('screen-home'); renderHome(); }
+
+// ── HOME ──
+function renderHome() {
+  const done = state.sets.filter(s => s.status === 'done').length;
+  const pct = Math.round((done / TOTAL_SETS) * 100);
+  document.getElementById('global-bar').style.width = pct + '%';
+  document.getElementById('global-pct').textContent = pct + '% সম্পন্ন';
+  document.getElementById('header-meta').textContent = `GRE 333 · ${done}/${TOTAL_SETS} সেট`;
+
+  const grid = document.getElementById('sets-grid');
+  const maxShow = Math.min(TOTAL_SETS, 20);
+  grid.innerHTML = '';
+
+  for (let i = 0; i < maxShow; i++) {
+    const s = state.sets[i];
+    const card = document.createElement('div');
+    const icons = { locked: '🔒', unlocked: '📖', done: '✅' };
+    const labels = { locked: 'লকড', unlocked: 'শুরু করো', done: 'সম্পন্ন' };
+    card.className = 'set-card' +
+      (s.status === 'locked' ? ' locked' : '') +
+      (s.status === 'done' ? ' done' : '') +
+      (state.selectedSet === i ? ' active-set' : '');
+    card.innerHTML = `<div class="set-icon">${icons[s.status]}</div><div class="set-num">সেট ${s.id}</div><div class="set-label">${labels[s.status]}</div>`;
+    if (s.status !== 'locked') card.onclick = () => selectSet(i);
+    grid.appendChild(card);
+  }
+
+  const btn = document.getElementById('start-btn');
+  const sel = state.sets[state.selectedSet];
+  btn.disabled = sel.status === 'locked' || sel.status === 'done';
+  btn.textContent = sel.status === 'done' ? 'সম্পন্ন ✅' : `সেট ${state.selectedSet + 1} শুরু করো →`;
+}
+
+function selectSet(i) {
+  state.selectedSet = i;
+  renderHome();
+}
+
+function startCurrentSet() {
+  state.wordIdx = 0;
+  state.currentSetMarks = [];
+  showScreen('screen-word');
+  renderWord();
+}
+
+// ── WORD SCREEN ──
+function renderWord() {
+  const words = getWords();
+  const w = words[state.wordIdx];
+  renderDots();
+  document.getElementById('word-counter').textContent = `${state.wordIdx + 1} / ${words.length}`;
+  document.getElementById('word-card').innerHTML = `
+    <div class="word-main">${w.word}</div>
+    <div class="word-pos">${w.pos}</div>
+    <div class="word-def">${w.def}</div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px; letter-spacing:1px; color:var(--text3); text-transform:uppercase; margin-bottom:6px;">Synonyms</div>
+      <div class="syn-row">${w.synonyms.map(s => `<span class="syn-chip">${s}</span>`).join('')}</div>
+      <div style="font-size:10px; letter-spacing:1px; color:var(--text3); text-transform:uppercase; margin-bottom:6px; margin-top:8px;">Antonyms</div>
+      <div class="syn-row">${w.antonyms.map(a => `<span class="ant-chip">${a}</span>`).join('')}</div>
+    </div>
+    <div class="bangla-box">${w.bangla}</div>
+    <div class="examples-label">উদাহরণ বাক্য</div>
+    ${w.examples.map(e => {
+      const highlighted = e.replace(new RegExp(w.word, 'gi'), `<em>${w.word}</em>`);
+      return `<div class="example-item">${highlighted}</div>`;
+    }).join('')}
+  `;
+}
+
+function renderDots() {
+  const words = getWords();
+  const c = document.getElementById('word-dots');
+  c.innerHTML = '';
+  words.forEach((_, i) => {
+    const d = document.createElement('div');
+    const m = state.currentSetMarks[i];
+    d.className = 'dot' + (m ? ' ' + m : '') + (i === state.wordIdx ? ' current' : '');
+    c.appendChild(d);
+  });
+}
+
+function markWord(color) {
+  state.currentSetMarks[state.wordIdx] = color;
+  const words = getWords();
+  if (state.wordIdx < words.length - 1) {
+    state.wordIdx++;
+    renderWord();
+  } else {
+    state.sets[state.selectedSet].marks = state.currentSetMarks;
+    saveSets();
+    startQuiz();
+  }
+}
+
+// ── QUIZ ──
+function startQuiz() {
+  showScreen('screen-quiz');
+  document.getElementById('quiz-set-label').textContent = state.selectedSet + 1;
+  const words = getWords();
+  state.correctCounts = {};
+  words.forEach(w => state.correctCounts[w.word] = 0);
+  state.quizIdx = 0;
+  state.quizData = buildQuiz(words);
+  renderScoreChips();
+  showQuizQ();
+  document.getElementById('quiz-loading').style.display = 'none';
+  document.getElementById('quiz-content').style.display = 'block';
+}
+
+function buildQuiz(words) {
+  const qs = [];
+  words.forEach(w => {
+    const allDefs = words.map(x => x.def);
+    const wrongDefs = allDefs.filter(d => d !== w.def).sort(() => Math.random() - 0.5).slice(0, 3);
+    qs.push({
+      word: w.word,
+      question: `"${w.word}" — সঠিক অর্থ কোনটি?`,
+      options: [w.def, ...wrongDefs].sort(() => Math.random() - 0.5),
+      answer: w.def
+    });
+    const allSyns = words.flatMap(x => x.synonyms).filter(s => !w.synonyms.includes(s));
+    const wrongSyns = allSyns.sort(() => Math.random() - 0.5).slice(0, 3);
+    if (wrongSyns.length >= 3) {
+      qs.push({
+        word: w.word,
+        question: `"${w.word}" এর synonym কোনটি?`,
+        options: [w.synonyms[0], ...wrongSyns].sort(() => Math.random() - 0.5),
+        answer: w.synonyms[0]
+      });
+    }
+  });
+  return qs.sort(() => Math.random() - 0.5);
+}
+
+function renderScoreChips() {
+  const d = document.getElementById('score-chips');
+  d.innerHTML = Object.entries(state.correctCounts).map(([word, cnt]) => {
+    const cls = cnt >= 2 ? 'done' : cnt === 1 ? 'one' : '';
+    return `<span class="score-chip ${cls}">${word} ${cnt}/2</span>`;
+  }).join('');
+}
+
+function showQuizQ() {
+  const allDone = Object.values(state.correctCounts).every(v => v >= 2);
+  if (allDone) { finishSet(); return; }
+
+  let q, attempts = 0;
+  do {
+    q = state.quizData[state.quizIdx % state.quizData.length];
+    state.quizIdx++;
+    attempts++;
+  } while (state.correctCounts[q.word] >= 2 && attempts < 30);
+
+  document.getElementById('quiz-q').textContent = q.question;
+  const opts = document.getElementById('quiz-opts');
+  opts.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt';
+    btn.textContent = opt;
+    btn.onclick = () => answerQ(btn, opt, q.answer, q.word);
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('quiz-feedback').style.display = 'none';
+  document.getElementById('quiz-next-btn').style.display = 'none';
+
+  const rem = Object.values(state.correctCounts).filter(v => v < 2).length;
+  document.getElementById('quiz-progress-hint').textContent = `আরও ${rem} টি শব্দে ২টি সঠিক উত্তর দরকার`;
+  renderScoreChips();
+}
+
+function answerQ(btn, chosen, correct, word) {
+  document.querySelectorAll('.quiz-opt').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+  const fb = document.getElementById('quiz-feedback');
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    state.correctCounts[word] = (state.correctCounts[word] || 0) + 1;
+    fb.textContent = '✓ সঠিক উত্তর!';
+    fb.className = 'quiz-feedback feedback-correct';
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '✗ ভুল হয়েছে। সঠিক উত্তরটি হাইলাইট করা হয়েছে।';
+    fb.className = 'quiz-feedback feedback-wrong';
+  }
+  fb.style.display = 'block';
+  document.getElementById('quiz-next-btn').style.display = 'block';
+  renderScoreChips();
+}
+
+function nextQuizQ() {
+  const allDone = Object.values(state.correctCounts).every(v => v >= 2);
+  if (allDone) { finishSet(); return; }
+  showQuizQ();
+}
+
+// ── FINISH SET ──
+function finishSet() {
+  state.sets[state.selectedSet].status = 'done';
+  const next = state.selectedSet + 1;
+  if (next < TOTAL_SETS) state.sets[next].status = 'unlocked';
+  saveSets();
+
+  const marks = state.currentSetMarks;
+  document.getElementById('stat-green').textContent = marks.filter(m => m === 'green').length;
+  document.getElementById('stat-orange').textContent = marks.filter(m => m === 'orange').length;
+  document.getElementById('stat-red').textContent = marks.filter(m => m === 'red').length;
+  showScreen('screen-done');
+}
+
+// ── INIT ──
+renderHome();
+</script>
+</body>
+</html>
