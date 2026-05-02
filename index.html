@@ -387,7 +387,7 @@ async function loadAndRenderHome(){
 
 function getActiveWords(){return ALL_WORDS[activeList]||GRE_WORDS;}
 
-const TOTAL_SETS=getActiveWords().length;
+
 let currentUser=null;
 let state={selectedSet:0,sets:[],wordIdx:0,quizData:[],quizIdx:0,correctCounts:{},currentSetMarks:[]};
 
@@ -451,7 +451,7 @@ function renderHome(){
   document.getElementById('section-label').textContent=activeList+' — সেট নির্বাচন করো';
   const grid=document.getElementById('sets-grid');
   grid.innerHTML='';
-  for(let i=0;i<TOTAL_SETS;i++){
+  for(let i=0;i<getActiveWords().length;i++){
     const s=state.sets[i];
     const icons={locked:'🔒',unlocked:'📖',done:'✅'};
     const labels={locked:'লকড',unlocked:'শুরু করো',done:'সম্পন্ন'};
