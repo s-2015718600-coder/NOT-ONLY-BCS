@@ -582,8 +582,9 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('main-app').style.display='block';
     document.getElementById('user-email-display').textContent=currentUser.email;
     state.sets=await loadProgress(currentUser.id,'gre');
-    state.selectedSet=0;
-    renderHome();
+if(!state.sets||state.sets.length===0)state.sets=defaultSets();
+state.selectedSet=0;
+renderHome();
   }else{
     currentUser=null;
     document.getElementById('loading-screen').style.display='none';
