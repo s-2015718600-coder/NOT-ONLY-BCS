@@ -443,6 +443,30 @@ function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classL
 function goHome(){showScreen('screen-home');renderHome();}
 
 function renderHome(){
+  if(!state.sets||state.sets.length===0)state.sets=defaultSets();
+  const done=state.sets.filter(s=>s.status==='done').length;
+  const currentTotal=getActiveWords().length;
+  const pct=Math.round((done/currentTotal)*100);
+  document.getElementById('global-bar').style.width=pct+'%';
+  document.getElementById('global-pct').textContent=pct+'% সম্পন্ন';
+  document.getElementById('section-label').textContent=activeList+' — সেট নির্বাচন করো';
+  const grid=document.getElementById('sets-grid');
+  grid.innerHTML='';
+  for(let i=0;i<currentTotal;i++){
+    const s=state.sets[i]||{id:i+1,status:'locked',marks:[]};
+    const icons={locked:'🔒',unlocked:'📖',done:'✅'};
+    const labels={locked:'লকড',unlocked:'শুরু করো',done:'সম্পন্ন'};
+    const card=document.createElement('div');
+    card.className='set-card'+(s.status==='locked'?' locked':'')+(s.status==='done'?' done':'')+(state.selectedSet===i?' active-set':'');
+    card.innerHTML=`<div class="set-icon">${icons[s.status]}</div><div class="set-num">সেট ${s.id}</div><div class="set-label">${labels[s.status]}</div>`;
+    if(s.status!=='locked')card.onclick=()=>selectSet(i);
+    grid.appendChild(card);
+  }
+  const btn=document.getElementById('start-btn');
+  const sel=state.sets[state.selectedSet]||{status:'locked'};
+  btn.disabled=sel.status==='locked'||sel.status==='done';
+  btn.textContent=sel.status==='done'?'সম্পন্ন ✅':`সেট ${state.selectedSet+1} শুরু করো →`;
+}
   const done=state.sets.filter(s=>s.status==='done').length;
   const currentTotal=getActiveWords().length;
   const pct=Math.round((done/currentTotal)*100);
