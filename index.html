@@ -483,6 +483,8 @@ async function finishSet(){
   state.sets[state.selectedSet].status='done';
   const next=state.selectedSet+1;
   if(next<TOTAL_SETS)state.sets[next].status='unlocked';
+ state.selectedSet=next;
+}
   if(currentUser){
     await saveSetProgress(currentUser.id,state.selectedSet,'done',state.currentSetMarks);
     if(next<TOTAL_SETS)await saveSetProgress(currentUser.id,next,'unlocked',[]);
